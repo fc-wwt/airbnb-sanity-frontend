@@ -1,7 +1,7 @@
 import React from "react"
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api"
 
-const DashboardMap = ({ properties }) => {
+const DashboardMap = ({ properties, sponsoredProperty }) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.googlePlacesAPI,
@@ -31,8 +31,19 @@ const DashboardMap = ({ properties }) => {
     setMap(null)
   }, [])
 
-  const image =
+  const regularMarkerIcon =
     "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
+  
+  // Custom icon for sponsored property - using a star marker
+  const sponsoredMarkerIcon = {
+    path: "M 12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9 Z",
+    fillColor: "#FFD700",
+    fillOpacity: 1,
+    strokeColor: "#FFA500",
+    strokeWeight: 2,
+    scale: 1.5,
+    anchor: new google.maps.Point(12, 12),
+  }
 
   return isLoaded ? (
     <GoogleMap
@@ -42,18 +53,39 @@ const DashboardMap = ({ properties }) => {
       onLoad={onLoad}
       onUnmount={onUnmount}
     >
-      {properties.map((property, index) => (
-        <Marker
-          position={{
-            lat: property?.location?.lat,
-            lng: property?.location?.lng,
-          }}
-          icon={{
-            url: image,
-            anchor: new google.maps.Point(5, 58),
-          }}
-        />
-      ))}
+      {properties.map((property, index) => {
+        const isSponsored = sponsoredProperty && property._id === sponsoredProperty._id
+        
+        return (
+          <Marker
+            key={property._id}
+            position={{
+              lat: property?.location?.lat,
+              lng: property?.location?.lng,
+            }}
+            icon={
+              isSponsored
+                ? sponsoredMarkerIcon
+                : {
+                    url: regularMarkerIcon,
+                    anchor: new google.maps.Point(5, 58),
+                  }
+            }
+            label={
+              isSponsored
+                ? {
+                    text: "★",
+                    color: "#FFD700",
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                  }
+                : undefined
+            }
+            zIndex={isSponsored ? 1000 : 1}
+            title={isSponsored ? `${property.title} (Sponsored)` : property.title}
+          />
+        )
+      })}
       <></>
     </GoogleMap>
   ) : (
